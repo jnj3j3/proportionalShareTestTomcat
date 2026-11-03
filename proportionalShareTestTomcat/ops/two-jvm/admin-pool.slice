@@ -1,0 +1,6 @@
+[Unit]
+Description=Admin-facing JVM slice (70%% weight)
+
+[Slice]
+CPUAccounting=yes
+CPUWeight=700

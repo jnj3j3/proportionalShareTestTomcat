@@ -1,0 +1,16 @@
+[Unit]
+Description=Proportional share test (one JVM, two connectors, threaded cgroups)
+After=network.target
+
+[Service]
+Type=simple
+User=ju
+WorkingDirectory=/opt/app
+Delegate=cpu
+CPUAccounting=yes
+ExecStartPre=/opt/app/setup-cgroups.sh
+ExecStart=/usr/bin/java -jar /opt/app/app.jar --spring.profiles.active=split
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

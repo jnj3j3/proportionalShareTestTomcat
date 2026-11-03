@@ -1,0 +1,6 @@
+[Unit]
+Description=User-facing JVM slice (30%% weight)
+
+[Slice]
+CPUAccounting=yes
+CPUWeight=300

@@ -1,0 +1,14 @@
+[Unit]
+Description=User-facing JVM (port 8080)
+After=network.target
+
+[Service]
+Type=simple
+User=ju
+WorkingDirectory=/opt/app
+Slice=user-pool.slice
+ExecStart=/usr/bin/java -jar /opt/app/app.jar --server.port=8080
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

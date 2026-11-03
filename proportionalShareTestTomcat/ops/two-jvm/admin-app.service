@@ -1,0 +1,14 @@
+[Unit]
+Description=Admin-facing JVM (port 8081)
+After=network.target
+
+[Service]
+Type=simple
+User=ju
+WorkingDirectory=/opt/app
+Slice=admin-pool.slice
+ExecStart=/usr/bin/java -jar /opt/app/app.jar --server.port=8081
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
