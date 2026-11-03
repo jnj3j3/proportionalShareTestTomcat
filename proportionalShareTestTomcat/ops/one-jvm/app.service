@@ -9,7 +9,7 @@ WorkingDirectory=/opt/app
 Delegate=cpu
 CPUAccounting=yes
 ExecStartPre=/opt/app/setup-cgroups.sh
-ExecStart=/usr/bin/java -jar /opt/app/app.jar --spring.profiles.active=split
+ExecStart=/usr/bin/java -Xms256m -Xmx512m -jar /opt/app/app.jar --spring.profiles.active=split
 Restart=on-failure
 
 [Install]

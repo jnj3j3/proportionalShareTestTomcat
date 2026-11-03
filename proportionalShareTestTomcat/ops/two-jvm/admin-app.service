@@ -7,7 +7,7 @@ Type=simple
 User=ju
 WorkingDirectory=/opt/app
 Slice=admin-pool.slice
-ExecStart=/usr/bin/java -jar /opt/app/app.jar --server.port=8081
+ExecStart=/usr/bin/java -Xms256m -Xmx512m -jar /opt/app/app.jar --server.port=8081
 Restart=on-failure
 
 [Install]

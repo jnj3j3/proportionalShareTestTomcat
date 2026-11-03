@@ -1,40 +1,35 @@
 #!/bin/sh
-# Blast /work in parallel against both ports and print simple throughput.
-# Usage: ./load.sh <seconds> <concurrency-per-port>
+# Parallel load against user (8080) and admin (8081) using wrk.
+# Requires: apt install wrk  (or build from https://github.com/wg/wrk)
+#
+# Usage: ./load.sh <seconds> <connections-per-side> <threads-per-side>
 set -eu
 
 DUR=${1:-30}
 C=${2:-50}
-USER_URL=http://127.0.0.1:8080/work
-ADMIN_URL=http://127.0.0.1:8081/work
+T=${3:-2}
 
-worker() {
-  URL=$1 OUT=$2
-  end=$(( $(date +%s) + DUR ))
-  n=0
-  while [ "$(date +%s)" -lt "$end" ]; do
-    curl -s "$URL" > /dev/null
-    n=$((n+1))
-  done
-  echo "$n" > "$OUT"
+command -v wrk >/dev/null 2>&1 || {
+  echo "wrk not found. Install: sudo apt install -y wrk" >&2
+  exit 1
 }
 
 tmp=$(mktemp -d)
-i=0
-while [ "$i" -lt "$C" ]; do
-  worker "$USER_URL"  "$tmp/u$i" &
-  worker "$ADMIN_URL" "$tmp/a$i" &
-  i=$((i+1))
-done
-wait
+wrk -t"$T" -c"$C" -d"${DUR}s" --latency http://127.0.0.1:8080/work > "$tmp/user"  2>&1 &
+USER_PID=$!
+wrk -t"$T" -c"$C" -d"${DUR}s" --latency http://127.0.0.1:8081/work > "$tmp/admin" 2>&1 &
+ADMIN_PID=$!
 
-user_total=0
-admin_total=0
-for f in "$tmp"/u*; do user_total=$((user_total + $(cat "$f"))); done
-for f in "$tmp"/a*; do admin_total=$((admin_total + $(cat "$f"))); done
+wait $USER_PID $ADMIN_PID
+
+echo "===== user (8080) =====";  cat "$tmp/user"
+echo "===== admin (8081) ====="; cat "$tmp/admin"
+
+user_rps=$(awk  '/Requests\/sec/ {print $2}' "$tmp/user")
+admin_rps=$(awk '/Requests\/sec/ {print $2}' "$tmp/admin")
+echo
+printf "user  rps = %s\n" "$user_rps"
+printf "admin rps = %s\n" "$admin_rps"
+printf "admin:user = %s\n" "$(awk "BEGIN{printf \"%.2f\", $admin_rps/$user_rps}")"
+
 rm -rf "$tmp"
-
-printf "duration=%ss concurrency=%s per side\n" "$DUR" "$C"
-printf "user  (8080) total=%d  rps=%s\n" "$user_total"  "$(( user_total / DUR ))"
-printf "admin (8081) total=%d  rps=%s\n" "$admin_total" "$(( admin_total / DUR ))"
-printf "admin:user ratio = %s\n" "$(awk "BEGIN{printf \"%.2f\", $admin_total/$user_total}")"
